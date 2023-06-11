@@ -129,6 +129,6 @@ Given the training data, only topics related to the following can be correctly p
 """
 input_text = "我要做一个有关马克思主义的游戏。它一定会很好玩哟！你想不想玩？"
 label_code = dataset["train"].info.features["label"].names
-processed_text = pad_sequences(tokenizer.texts_to_sequences([remove_noise(input_text)]), maxlen=max_length, padding='post')
+processed_text = pad_sequences(tokenizer.texts_to_sequences([remove_noise(input_text)]), maxlen=max_length, padding='post', truncating='post')
 predicted_label = np.argmax(model.predict(processed_text), axis=1)
 print(label_code[predicted_label[0]])
