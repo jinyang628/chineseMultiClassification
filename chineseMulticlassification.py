@@ -29,6 +29,8 @@ stop = set(stopwords.words("chinese"))
 
 df_train = pd.DataFrame(dataset["train"])
 df_val = pd.DataFrame(dataset["validation"])
+df_test = pd.DataFrame(dataset["test"])
+
 
 def remove_noise(text):
     chinese_punctuation = ["，","。","！","？","；","：","「","」","『","』","【","】","（","）","《","》","〈","〉","·","“","”","‘","’","(",")"]
@@ -40,6 +42,8 @@ def remove_noise(text):
 
 df_train["text"] = df_train["text"].map(remove_noise)
 df_val["text"] = df_val["text"].map(remove_noise)
+df_test["text"] = df_test["text"].map(remove_noise)
+
 
 def counter_word(dataset):
     counter = Counter()
@@ -56,19 +60,23 @@ train_sentences = [example for example in df_train['text']]
 train_labels = [example for example in df_train['label']]
 val_sentences = [example for example in df_val['text']]
 val_labels = [example for example in df_val['label']]
+test_sentences = [example for example in df_test['text']]
+test_labels = [example for example in df_test['label']]
 
-tokenizer = Tokenizer(num_words=num_unique_words)
+tokenizer = Tokenizer(num_words=num_unique_words, oov_token="<OOV>")
 tokenizer.fit_on_texts(train_sentences)
 
 word_index = tokenizer.word_index
 
 train_sequences = tokenizer.texts_to_sequences(train_sentences)
 val_sequences = tokenizer.texts_to_sequences(val_sentences)
+test_sequences = tokenizer.texts_to_sequences(test_sentences)
 
-max_length = max(max(len(seq) for seq in train_sequences),
-                 max(len(seq) for seq in val_sequences))
+max_length = max(len(seq) for seq in train_sequences)
+
 train_padded = pad_sequences(train_sequences, maxlen=max_length, padding='post')
-val_padded = pad_sequences(val_sequences, maxlen=max_length, padding='post')
+val_padded = pad_sequences(val_sequences, maxlen=max_length, padding='post', truncating='post')
+test_padded = pad_sequences(test_sequences, maxlen=max_length, padding='post', truncating='post')
 
 reverse_word_index = dict([(idx, word) for (word, idx) in word_index.items()])
 def decode(sequence):
@@ -94,9 +102,11 @@ model.summary()
 label_encoder = LabelEncoder()
 train_labels_encoded = label_encoder.fit_transform(train_labels)
 val_labels_encoded = label_encoder.transform(val_labels)
+test_labels_encoded = label_encoder.transform(test_labels)
 
 train_labels_onehot = tf.keras.utils.to_categorical(train_labels_encoded)
 val_labels_onehot = tf.keras.utils.to_categorical(val_labels_encoded)
+test_labels_onehot = tf.keras.utils.to_categorical(test_labels_encoded)
 
 # Use CategoricalCrossentropy for multiclassification problems
 loss = keras.losses.CategoricalCrossentropy(from_logits=False)
@@ -105,16 +115,10 @@ metrics=["accuracy"]
 model.compile(loss=loss, optimizer=optim, metrics=metrics)
 model.fit(train_padded, train_labels_onehot, epochs=2, validation_data=(val_padded, val_labels_onehot), verbose=2)
 
-df_test = pd.DataFrame(dataset["test"])
-df_test["text"] = df_test["text"].map(remove_noise)
-test_sentences = [example for example in df_test['text']]
-test_labels = [example for example in df_test['label']]
-test_sequences = tokenizer.texts_to_sequences(test_sentences)
-test_padded = pad_sequences(test_sequences, maxlen=max_length, padding='post')
 
 predictions = model.predict(test_padded)
 predicted_labels = np.argmax(predictions, axis=1)
-accuracy = accuracy_score(test_labels, predicted_labels)
+accuracy = accuracy_score(test_labels_encoded, predicted_labels)
 print("Accuracy:", accuracy)
 
 """
