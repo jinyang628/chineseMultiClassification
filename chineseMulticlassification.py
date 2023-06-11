@@ -99,6 +99,11 @@ activation="softmax" takes a vector of real-valued numbers as input and transfor
 model.add(Dense(10, activation="softmax"))
 model.summary()
 
+"""
+One hot encoding is the process by which categorical variables are converted into a form that could be provided to ML algorithms to do a better
+job in prediction. It generates one boolean column for each category and only one of these columns could take on the value 1 for each sample.
+label_encoder.fit_transform transforms the label into a vector, which is then one-hot encoded via to_categorical.
+"""
 label_encoder = LabelEncoder()
 train_labels_encoded = label_encoder.fit_transform(train_labels)
 val_labels_encoded = label_encoder.transform(val_labels)
