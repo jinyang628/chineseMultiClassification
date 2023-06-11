@@ -82,7 +82,12 @@ model = keras.models.Sequential()
 model.add(Embedding(num_unique_words, 32, input_length=max_length))
 # dropout parameter of 0.1 specifies that a fraction of the input units (10%) will be randomly set to 0 during training to prevent overfitting.
 model.add(LSTM(64, dropout=0.1))
-# 10 because there are 10 different labels 
+"""
+10 because there are 10 different labels 
+
+activation="softmax" takes a vector of real-valued numbers as input and transforms them into a probability distribution over K different classes
+    - Use softmax for multiclassification problems 
+"""
 model.add(Dense(10, activation="softmax"))
 model.summary()
 
@@ -93,6 +98,7 @@ val_labels_encoded = label_encoder.transform(val_labels)
 train_labels_onehot = tf.keras.utils.to_categorical(train_labels_encoded)
 val_labels_onehot = tf.keras.utils.to_categorical(val_labels_encoded)
 
+# Use CategoricalCrossentropy for multiclassification problems
 loss = keras.losses.CategoricalCrossentropy(from_logits=False)
 optim = keras.optimizers.Adam(learning_rate=0.001)
 metrics=["accuracy"]
@@ -107,11 +113,6 @@ test_sequences = tokenizer.texts_to_sequences(test_sentences)
 test_padded = pad_sequences(test_sequences, maxlen=max_length, padding='post')
 
 predictions = model.predict(test_padded)
-"""
-For multiclassification the predicted probabilities from the model will be in 
-the form of a 2D array, where each row represents a sample and each column 
-represents the probability of that sample belonging to a particular class
-"""
 predicted_labels = np.argmax(predictions, axis=1)
 accuracy = accuracy_score(test_labels, predicted_labels)
 print("Accuracy:", accuracy)
